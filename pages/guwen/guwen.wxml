@@ -1,0 +1,174 @@
+<view class="container">
+  <!-- 自定义顶部区域（迁移样式页面顶部结构） -->
+  <view class="custom-header">
+    <image class="header-bg-image" src="https://newlan.oss-cn-shanghai.aliyuncs.com/%E7%95%8C%E9%9D%A2%E8%83%8C%E6%99%AF%E5%9B%BE" mode="aspectFill"></image>
+    <view class="status-bar" style="height: {{statusBarHeight}}px;"></view>
+    <view class="search-bar">
+      <view class="search-container">
+        <input 
+          class="search-input" 
+          placeholder="输入古诗文关键词..." 
+          bindinput="onInput" 
+          value="{{searchKeyword}}"
+          bindconfirm="doSearch"
+        />
+        <view class="search-btn" bindtap="doSearch">搜索</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 内容区域（整合主体书籍/文章逻辑，用样式页面结构） -->
+  <scroll-view 
+    class="result-list" 
+    scroll-y="true"
+    scroll-with-animation="true"
+    enable-back-to-top="true"
+  >
+    <view class="top-spacer"></view>
+    
+    <block wx:if="{{!loading}}">
+      <!-- 空状态（保留主体逻辑） -->
+      <block wx:if="{{totalCount === 0}}">
+        <view class="empty-result">
+          <view class="empty-text">
+            {{hasSearched ? '没有找到匹配的古诗文' : '暂无古诗文数据'}}
+          </view>
+          <view class="empty-tip">
+            {{hasSearched ? '请尝试不同的关键词' : ''}}
+          </view>
+        </view>
+      </block>
+    
+      <!-- 有数据状态（整合主体数据，用样式页面结构） -->
+      <block wx:else>
+        <!-- 群籍藏识区域（保留主体“显示全部”按钮，用样式页面布局） -->
+        <view class="qunjicangshi-section">
+          <view class="qunjicangshi-header" bindtap="navigateToAllBooks">
+            <!-- 主体“显示全部”按钮逻辑整合到此处 -->
+            <view class="qunjicangshi-title-wrap">
+              <view class="qunjicangshi-decorator"></view>
+              <text class="qunjicangshi-title">群籍藏识</text>
+            </view>
+            <image class="qunjicangshi-arrow" src="/images/右箭头.png" mode="aspectFit"></image>
+          </view>          
+          
+          <!-- 书籍轮播容器（用样式页面scroll-view，保留主体加载/错误状态） -->
+          <view class="books-carousel-container">
+            <view wx:if="{{booksLoading}}" class="books-loading">
+              <text>加载书籍中...</text>
+            </view>
+            <view wx:if="{{booksError}}" class="books-error">
+              <text>{{booksError}}</text>
+            </view>
+            
+            <block wx:if="{{booksList.length > 0}}">
+              <scroll-view 
+                class="books-scroll"
+                scroll-x="true"
+                scroll-with-animation="true"
+                enable-flex="true"
+                bindscroll="onCarouselScroll"
+                id="booksCarousel"
+              >
+                <view class="books-list">
+                  <block wx:for="{{booksList}}" wx:key="id" wx:for-item="book">
+                    <view class="book-card" bindtap="navigateToBookDetail" data-book="{{book}}">
+                      <view class="book-img-wrap">
+                        <image 
+                          class="book-img" 
+                          src="{{book.imageError ? book.localFallback : book.safeImage}}" 
+                          mode="scaleToFill"
+                          binderror="handleBookImgError"
+                          data-index="{{index}}"
+                          lazy-load="true"
+                        ></image>
+                      </view>
+                      <view class="book-info">
+                        <text class="book-title">{{book.title}}</text>
+                        <text class="book-author">{{book.author || '未知作者'}}</text>
+                      </view>
+                    </view>
+                  </block>
+                </view>
+              </scroll-view>
+            </block>
+          </view>
+        </view>
+
+        <!-- 简牍文识区域（迁移样式页面结构，替换主体search-header） -->
+        <view class="jianduwenshi-section">
+          <view class="jianduwenshi-title-wrap">
+            <view class="jianduwenshi-decorator"></view>
+            <text class="jianduwenshi-title">简牍文识</text>
+          </view>
+          <view class="jianduwenshi-count">
+            {{hasSearched ? '找到 ' + totalCount + ' 条匹配结果' : '共 ' + totalCount + ' 条'}}
+          </view>
+        </view>
+        
+        <!-- 文章列表卡片（用样式页面article-card，保留主体数据绑定） -->
+        <block wx:for="{{searchResults}}" wx:key="id">
+          <view 
+            class="article-card" 
+            bindtap="navigateToDetail"
+            data-item="{{item}}"  
+            data-id="{{item.id}}" 
+            data-index="{{index}}" 
+          >
+            <text class="article-title">{{item.title}}</text>
+            <view class="article-info">
+              <text class="article-author">{{item.author || '未知'}}</text>
+              <text class="article-dynasty">{{item.dynasty || '不详'}}</text>
+            </view>
+            <text class="article-content">{{item.content || item.description}}</text>
+          </view>
+        </block>
+      </block>
+    </block>
+    
+    <!-- 加载状态（统一为样式页面的loading） -->
+    <view class="loading" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+    
+    <view class="bottom-spacer"></view>
+  </scroll-view>
+  
+  <!-- 分页栏（保留主体逻辑，用样式页面样式） -->
+  <view class="pagination-container" wx:if="{{totalCount > 0 && searchResults.length > 0}}">
+    <text class="total-count">总计 {{totalCount}}</text>
+    <view class="pagination-controls">
+      <view 
+        class="pagination-arrow {{currentPage === 1 ? 'disabled' : ''}}" 
+        bindtap="goToPrevPage"
+      >
+        <image src="https://newlan.oss-cn-shanghai.aliyuncs.com/icons/%E5%B7%A6%E7%AE%AD%E5%A4%B4.jpg" class="arrow-icon" mode="aspectFit" />
+      </view>
+      <view class="page-current-container">
+        <text>{{currentPage}}</text>
+      </view>
+      <view 
+        class="pagination-arrow {{currentPage === totalPages ? 'disabled' : ''}}" 
+        bindtap="goToNextPage"
+      >
+        <image src="https://newlan.oss-cn-shanghai.aliyuncs.com/icons/%E5%8F%B3%E7%AE%AD%E5%A4%B4.jpg" class="arrow-icon" mode="aspectFit" />
+      </view>
+      <view class="goto-group">
+        <text class="goto-label">转到</text>
+        <input 
+          class="goto-input" 
+          type="number" 
+          placeholder="页码" 
+          value="{{gotoPage}}"
+          bindinput="onGotoInput"
+        />
+      </view>
+      <button class="goto-button" bindtap="goToSpecifiedPage">跳转</button>
+    </view>
+  </view>
+</view>
+
+<!-- 浮动导航按钮（保留主体功能，用样式页面样式） -->
+<view class="float-nav-tool" bindtap="navigateToIndex">
+  <text class="float-nav-icon">🏠</text>
+</view>

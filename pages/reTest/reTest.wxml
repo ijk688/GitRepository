@@ -1,0 +1,85 @@
+<!-- 搜索筛选区域 -->
+<view class="search-container">
+  <view class="search-box">
+    <input 
+      class="search-input"
+      placeholder="输入文章名" 
+      bindinput="handleArticleInput" 
+      value="{{articleInput}}"
+    />
+    <!-- 指定显示cn字段 -->
+    <picker 
+      class="type-picker"
+      mode="selector" 
+      range="{{questionTypes}}" 
+      range-key="cn"     
+      value="{{typeIndex}}"
+      bindchange="bindTypeChange"
+    >
+    <view class="picker-text">{{questionTypes[typeIndex] ? questionTypes[typeIndex].cn : questionTypes[0].cn}}</view>
+    </picker>
+    <button class="search-btn" bindtap="fetchData">查询</button>
+  </view>
+</view>
+<!-- 题目内容展示区域 -->
+<!-- 根据题型显示不同内容结构 -->
+<view wx:if="{{questionList.length>0}}">
+
+<block wx:for="{{questionList}}" wx:for-index="qIndex" wx:key="qIndex">
+  <!-- 选择题样式 -->
+  <view wx:if="{{currentType === 'choice'}}" class=" question-item choice-question">
+    <view class="question-header ">
+        <text class="q-id">{{qIndex + 1}}.{{item.knowledge_point}}</text>
+      <text>{{item.question_content}}</text>
+    </view>
+    <view class="options-container">
+        <view 
+        wx:for="{{choiceContents[qIndex]}}" 
+        wx:for-index="oIndex"
+        wx:key="oIndex"
+        class="option-item {{item.isChoose ? 'option-selected' : ''}}"
+        bindtap="handleOptionTap"
+        data-q-index="{{qIndex}}"
+        data-o-index="{{oIndex}}"
+      >
+      <text class="option-text">{{item.text}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 填空题样式 -->
+  <view wx:elif="{{currentType === 'fill_blank'}}" class="question-item fill-question">
+    <view class="question-header">
+      <view class="q-id">{{qIndex + 1}}.{{item.knowledge_point}}</view>
+     <text class="q-content">{{item.question_content}}</text>
+    </view>
+    <input placeholder="请填写答案" class="answer-input" />
+  </view>
+
+  <!-- 判断题样式 -->
+  <view wx:elif="{{currentType === 'comprehension'}}" class="question-item judge-question">
+    <view class="question-header">
+      <view class="q-id">{{qIndex + 1}}.{{item.knowledge_point}}</view>
+      <text class="q-content">{{item.question_content}}</text>
+    </view>
+    <radio-group class="radio-group">
+      <label wx:for="{{['正确', '错误']}}" wx:key="*this">
+        <radio value="{{item}}" /> {{item}}
+      </label>
+    </radio-group>
+  </view>
+
+  <!-- 翻译题 -->
+  <view wx:elif="{{currentType === 'translation'}}" class="question-item translation-question">
+    <view class="question-header">
+      <view class="q-id">{{qIndex + 1}}.{{item.knowledge_point}}</view>
+     <text class="q-content">{{item.question_content}}</text>
+    </view>
+    <input placeholder="请填写答案" class="answer-input" />
+  </view>
+</block>
+</view>
+<!-- 无内容时展示区域 -->
+<view wx:else class="empty-tip">
+  <text class="empty-text">暂无内容</text>
+</view>
